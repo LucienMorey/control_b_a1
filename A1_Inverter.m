@@ -20,8 +20,8 @@ clear;
 simu = 'A1_Inverter_sim';
 
 %% Simulation Settings
-CL = 0;     % 1: Enable closed-loop using SFC
-obs = 0;    % 0: SFC without observer, i.e., u = -Fx +r
+CL = 1;     % 1: Enable closed-loop using SFC
+obs = 1;    % 0: SFC without observer, i.e., u = -Fx +r
             % 1: SFC with observer, i.e., u = -Fx_hat + r
 noise = 0;  % add noise to measurement
 
@@ -41,7 +41,7 @@ w=2*pi*50;      %Output frequency
 Vdc=100;        %DC-voltage
 
 %% Continuous time model
-Ac = [0 -1/l;
+Ac = [0 -Ro/l;
       1/(Co*Ro) -1/(Co*Ro)];
 Bc = [Vdc/l 0]';
 Cc = [0 Ro];
@@ -50,7 +50,7 @@ Dc = 0;
 sys_c = ss(Ac,Bc,Cc,Dc);
 
 %% discrete time model
-sys_d = c2d(sys_c, Ts)
+sys_d = c2d(sys_c, Ts);
 A=sys_d.A;
 B=sys_d.B;
 C=sys_d.C;
@@ -59,18 +59,36 @@ D=sys_d.D;
 %% Controller Pole Placement 
 % implement the pole placement technique here to obtain the 
 % state feedback gain matrix F
-zeta_c = 1;
-wn_c = 1;
+zeta_c = 0.85;
+wn_c = 2*pi*4000;
 
-F= [0 1];
+s1_c = -zeta_c *wn_c + wn_c*sqrt(zeta_c^2 -1);
+s2_c = -zeta_c *wn_c - wn_c*sqrt(zeta_c^2 -1);
+sfc_poles_c = [s1_c,s2_c]
+
+s1 = exp(s1_c*Ts);
+s2 = exp(s2_c*Ts);
+sfc_poles = [s1,s2]
+
+%F = place(Ac,Bc,sfc_poles_c)
+F= place(A,B,sfc_poles)
 
 %% Observer Pole Placement 
 % implement the pole placement technique here to obtain the 
 % observer matrix L
-zeta_o = 1;
-wn_o = 1;
+zeta_o = 0.85;
+wn_o = 2*pi*4700;
 
-L=[0 1]';
+obs_s1_c = -zeta_o *wn_o + wn_o*sqrt(zeta_o^2 -1);
+obs_s2_c = -zeta_o *wn_o - wn_o*sqrt(zeta_o^2 -1);
+obs_poles_c = [obs_s1_c,obs_s2_c]
+
+obs_s1 = exp(obs_s1_c*Ts);
+obs_s2 = exp(obs_s2_c*Ts);
+obs_poles = [obs_s1,obs_s2]
+
+%L = place(Ac',Cc',obs_poles_c)'
+L = place(A',C',obs_poles)'
 
 sim(simu)
 
