@@ -23,7 +23,7 @@ simu = 'A1_Inverter_sim';
 CL = 1;     % 1: Enable closed-loop using SFC
 obs = 1;    % 0: SFC without observer, i.e., u = -Fx +r
             % 1: SFC with observer, i.e., u = -Fx_hat + r
-noise = 0;  % add noise to measurement
+noise = 1;  % add noise to measurement
 
 %% Times and Frequencies
 Tsim = 80e-3;   %Total simulation time
@@ -64,31 +64,24 @@ wn_c = 2*pi*4000;
 
 s1_c = -zeta_c *wn_c + wn_c*sqrt(zeta_c^2 -1);
 s2_c = -zeta_c *wn_c - wn_c*sqrt(zeta_c^2 -1);
-sfc_poles_c = [s1_c,s2_c]
+sfc_poles_c = [s1_c,s2_c];
 
-s1 = exp(s1_c*Ts);
-s2 = exp(s2_c*Ts);
-sfc_poles = [s1,s2]
+sfc_poles = exp(sfc_poles_c*Ts);
 
-%F = place(Ac,Bc,sfc_poles_c)
-F= place(A,B,sfc_poles)
+F= place(A,B,sfc_poles);
 
 %% Observer Pole Placement 
 % implement the pole placement technique here to obtain the 
 % observer matrix L
 zeta_o = 0.85;
-wn_o = 2*pi*4700;
+wn_o = 2*pi*20000;
 
 obs_s1_c = -zeta_o *wn_o + wn_o*sqrt(zeta_o^2 -1);
 obs_s2_c = -zeta_o *wn_o - wn_o*sqrt(zeta_o^2 -1);
-obs_poles_c = [obs_s1_c,obs_s2_c]
+obs_poles_c = [obs_s1_c,obs_s2_c];
+obs_poles = exp(obs_poles_c*Ts);
 
-obs_s1 = exp(obs_s1_c*Ts);
-obs_s2 = exp(obs_s2_c*Ts);
-obs_poles = [obs_s1,obs_s2]
-
-%L = place(Ac',Cc',obs_poles_c)'
-L = place(A',C',obs_poles)'
+L = place(A',C',obs_poles)';
 
 sim(simu)
 
